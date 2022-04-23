@@ -1,4 +1,7 @@
-project('gcron', 'c', version: '0.0')
+project(
+  'gcron', 'c',
+  version: '0.0',
+  default_options: ['c_std=c11'])
 
 inc = include_directories('include')
 
@@ -6,7 +9,9 @@ lib = library(
     meson.project_name(),
     'src/cron_source.c',
     'src/gcron.c',
+    include_directories: inc,
     dependencies: [
+        meson.get_compiler('c').find_library('m', required: true),
         dependency('glib-2.0', version: '>=2.38'),
     ],
     install: true)
@@ -28,12 +33,23 @@ gnome.generate_vapi(
 import('pkgconfig').generate(lib)
 
 test(
-  'tests',
-  executable(
     'tests',
-    'test/main.c',
-    include_directories: inc,
-    link_with: lib,
-    dependencies: [
-        dependency('glib-2.0', version: '>=2.38'),
-    ]))
+    executable(
+      'tests',
+      'test/main.c',
+      'test/prepare.c',
+      'test/schedule.c',
+      include_directories: inc,
+      link_with: lib,
+      dependencies: [
+          dependency('glib-2.0', version: '>=2.38'),
+      ]))
+
+executable(
+  'example',
+  'example/main.c',
+  include_directories: inc,
+  link_with: lib,
+  dependencies: [
+      dependency('glib-2.0', version: '>=2.38'),
+  ])
