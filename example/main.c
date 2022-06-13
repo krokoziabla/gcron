@@ -3,6 +3,7 @@
 
 #include <glib.h>
 
+#include "annual.h"
 #include "cron_source.h"
 
 static gboolean
@@ -20,7 +21,7 @@ int
 main (int argc, char *argv[])
 {
   GMainContext *context = g_main_context_new ();
-  GSource *source = g_cron_source_new ("* * *");        // every minute, every hour, every day of week
+  GSource *source = g_cron_source_new ("* * * * *");
   g_source_set_callback (source, callback, NULL, NULL);
 
   g_source_attach (source, context);

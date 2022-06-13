@@ -7,6 +7,7 @@ inc = include_directories('include')
 
 lib = library(
     meson.project_name(),
+    'src/annual.c',
     'src/cron_source.c',
     'src/gcron.c',
     include_directories: inc,
