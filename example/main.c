@@ -3,14 +3,13 @@
 
 #include <glib.h>
 
-#include "annual.h"
 #include "cron_source.h"
 
 static gboolean
 callback (gpointer user_data)
 {
   time_t now = time (NULL);
-  char message[20];
+  char message[26];
   strftime (message, sizeof message, "%F %T %z", localtime (&now));
   g_print ("%s\n", message);
 
@@ -21,7 +20,7 @@ int
 main (int argc, char *argv[])
 {
   GMainContext *context = g_main_context_new ();
-  GSource *source = g_cron_source_new ("* * * * *");
+  GSource *source = g_cron_source_new (" 5 */3 * * 0-4");
   g_source_set_callback (source, callback, NULL, NULL);
 
   g_source_attach (source, context);

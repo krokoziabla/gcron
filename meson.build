@@ -15,6 +15,7 @@ lib = library(
         meson.get_compiler('c').find_library('m', required: true),
         dependency('glib-2.0', version: '>=2.38'),
     ],
+    c_args: ['-Wall','-Wextra'],
     install: true)
 
 install_headers('include/cron_source.h')
