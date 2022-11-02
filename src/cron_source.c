@@ -20,7 +20,7 @@ GSourceFuncs g_cron_source_funcs = {
 };
 
 static gboolean
-in_itself (time_t t, const struct PulseTrain *train, time_t * pulse)
+in_itself (time_t t, struct PulseTrain *train, time_t * pulse)
 {
   g_return_val_if_fail (train != NULL, FALSE);
   g_return_val_if_fail (train->period != 0u, FALSE);
@@ -49,15 +49,13 @@ in_itself (time_t t, const struct PulseTrain *train, time_t * pulse)
 static gboolean in_any (time_t t, GSList * trains, time_t * pulse);
 
 static gboolean
-in (time_t t, const struct PulseTrain *train, time_t * pulse)
+in (time_t t, struct PulseTrain *train, time_t * pulse)
 {
   g_return_val_if_fail (train != NULL, FALSE);
   g_return_val_if_fail (pulse != NULL, FALSE);
 
   if (!in_itself (t / train->unit - train->shift, train, pulse))
-    {
-      return FALSE;
-    }
+    return FALSE;
   *pulse = (*pulse * train->period + train->shift) * train->unit;
   return in_any (t - *pulse, train->children, pulse);
 }
@@ -70,7 +68,7 @@ in_any (time_t t, GSList * trains, time_t * pulse)
   for (GSList * train = trains; train != NULL; train = train->next)
     {
       time_t pulse;
-      if (!in (t, (const struct PulseTrain *) train->data, &pulse))
+      if (!in (t, (struct PulseTrain *) train->data, &pulse))
         continue;
       if (pulse < minimal)
         minimal = pulse;
@@ -129,13 +127,19 @@ pulse_train_for_each (GSList * trains, GFunc func, gpointer user_data)
 }
 
 static void
-add_children_to_hash (struct PulseTrain *train, GHashTable *children_to_dispose)
+add_children_to_hash (struct PulseTrain *train,
+                      GHashTable * children_to_dispose)
 {
   g_return_if_fail (train != NULL);
   g_return_if_fail (children_to_dispose != NULL);
 
-  g_hash_table_add (children_to_dispose,
-                    g_steal_pointer (&train->children));
+  g_hash_table_add (children_to_dispose, g_steal_pointer (&train->children));
+}
+
+static void
+destroy_wrapper (gpointer data, GDestroyNotify destroyer)
+{
+  destroyer (data);
 }
 
 static void
@@ -143,13 +147,13 @@ finalize (struct GCronSource *source)
 {
   g_return_if_fail (source != NULL);
 
-  GHashTable * children_to_dispose = g_hash_table_new (NULL, NULL);
+  GHashTable *children_to_dispose = g_hash_table_new (NULL, NULL);
 
   for (GSList * g = source->pulse_trains; g != NULL; g = g->next)
     {
-      pulse_train_for_each (g->data, (GFunc) add_children_to_hash, children_to_dispose);
-      g_hash_table_add (children_to_dispose,
-                        g_steal_pointer (&g->data));
+      pulse_train_for_each (g->data, (GFunc) add_children_to_hash,
+                            children_to_dispose);
+      g_hash_table_add (children_to_dispose, g_steal_pointer (&g->data));
     }
 
   GHashTableIter iter;
@@ -159,16 +163,13 @@ finalize (struct GCronSource *source)
     {
       g_hash_table_iter_init (&iter, children_to_dispose);
       while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          g_slist_foreach (key, (GFunc) source->pulse_train_destructor, NULL);
-        }
+        g_slist_foreach (key, (GFunc) destroy_wrapper,
+                         source->pulse_train_destructor);
     }
 
   g_hash_table_iter_init (&iter, children_to_dispose);
   while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      g_slist_free (key);
-    }
+    g_slist_free (key);
 
   g_clear_pointer (&children_to_dispose, g_hash_table_unref);
 

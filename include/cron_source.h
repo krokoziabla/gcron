@@ -12,8 +12,7 @@ struct PulseTrain
   GSList *children;
 };
 
-extern void pulse_train_for_each (GSList * trains, GFunc func,
-                                  gpointer user_data);
+void pulse_train_for_each (GSList * trains, GFunc func, gpointer user_data);
 
 struct GCronSource
 {
@@ -29,3 +28,8 @@ struct GCronSource
 extern GSourceFuncs g_cron_source_funcs;
 
 GSource *g_cron_source_new (gchar * schedule);
+
+typedef GSList *(*ForEachFunc) (GSList *, guint *, const struct PulseTrain *);
+GSList *for_each (gchar * items, ForEachFunc func,
+                  const struct PulseTrain *model, guint asterisk_min,
+                  guint asterisk_max);
