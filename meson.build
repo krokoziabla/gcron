@@ -13,12 +13,12 @@ lib = library(
     include_directories: inc,
     dependencies: [
         meson.get_compiler('c').find_library('m', required: true),
-        dependency('glib-2.0', version: '>=2.38'),
+        dependency('glib-2.0', version: '>=2.44'),
     ],
     c_args: ['-Wall','-Wextra'],
     install: true)
 
-install_headers('include/cron_source.h')
+install_headers('include/gcron.h')
 
 gnome = import('gnome')
 
@@ -44,7 +44,7 @@ test(
       include_directories: inc,
       link_with: lib,
       dependencies: [
-          dependency('glib-2.0', version: '>=2.38'),
+          dependency('glib-2.0', version: '>=2.44'),
       ]))
 
 executable(
@@ -53,5 +53,5 @@ executable(
   include_directories: inc,
   link_with: lib,
   dependencies: [
-      dependency('glib-2.0', version: '>=2.38'),
+      dependency('glib-2.0', version: '>=2.44'),
   ])

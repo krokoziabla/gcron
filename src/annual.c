@@ -1,7 +1,6 @@
 #include <glib.h>
 
-#include "annual.h"
-#include "cron_source.h"
+#include "gcron_private.h"
 
 static void
 set_unit_day (struct PulseTrain *train, gpointer userdata)
@@ -10,6 +9,7 @@ set_unit_day (struct PulseTrain *train, gpointer userdata)
 
   (void) userdata;
 
+  g_slist_foreach (train->children, (GFunc) set_unit_day, NULL);
   train->unit = 60u * 60u * 24u;
 }
 
@@ -99,7 +99,7 @@ make (GSList * non_leap_trains)
     train->children = children;
   }
 
-  pulse_train_for_each (trains, (GFunc) set_unit_day, NULL);
+  g_slist_foreach (trains, (GFunc) set_unit_day, NULL);
 
   return trains;
 }

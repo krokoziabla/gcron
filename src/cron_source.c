@@ -2,7 +2,7 @@
 #include <math.h>
 #include <time.h>
 
-#include "cron_source.h"
+#include "gcron_private.h"
 
 typedef gboolean (*GPrepareFunc) (GSource * source, gint * timeout_);
 typedef void (*GFinaliseFunc) (GSource * source);
@@ -114,32 +114,21 @@ dispatch (GSource * source, GSourceFunc callback, gpointer user_data)
   return callback != NULL ? callback (user_data) : G_SOURCE_CONTINUE;
 }
 
-void
-pulse_train_for_each (GSList * trains, GFunc func, gpointer user_data)
-{
-  for (GSList * t = trains; t != NULL; t = t->next)
-    {
-      struct PulseTrain *train = (struct PulseTrain *) t->data;
-      pulse_train_for_each (train->children, func, user_data);
-
-      func (t->data, user_data);
-    }
-}
-
 static void
-add_children_to_hash (struct PulseTrain *train,
-                      GHashTable * children_to_dispose)
+collect_children (struct PulseTrain *train, GHashTable * children_to_dispose)
 {
   g_return_if_fail (train != NULL);
   g_return_if_fail (children_to_dispose != NULL);
 
+  g_slist_foreach (train->children, (GFunc) collect_children,
+                   children_to_dispose);
   g_hash_table_add (children_to_dispose, g_steal_pointer (&train->children));
 }
 
 static void
-destroy_wrapper (gpointer data, GDestroyNotify destroyer)
+noop_destroy (gpointer data)
 {
-  destroyer (data);
+  (void) data;
 }
 
 static void
@@ -151,25 +140,21 @@ finalize (struct GCronSource *source)
 
   for (GSList * g = source->pulse_trains; g != NULL; g = g->next)
     {
-      pulse_train_for_each (g->data, (GFunc) add_children_to_hash,
-                            children_to_dispose);
+      g_slist_foreach (g->data, (GFunc) collect_children,
+                       children_to_dispose);
       g_hash_table_add (children_to_dispose, g_steal_pointer (&g->data));
     }
 
   GHashTableIter iter;
   gpointer key, value;
 
-  if (source->pulse_train_destructor != NULL)
-    {
-      g_hash_table_iter_init (&iter, children_to_dispose);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        g_slist_foreach (key, (GFunc) destroy_wrapper,
-                         source->pulse_train_destructor);
-    }
+  GDestroyNotify destructor = source->pulse_train_destructor;
+  if (destructor == NULL)
+    destructor = noop_destroy;
 
   g_hash_table_iter_init (&iter, children_to_dispose);
   while (g_hash_table_iter_next (&iter, &key, &value))
-    g_slist_free (key);
+    g_slist_free_full (key, destructor);
 
   g_clear_pointer (&children_to_dispose, g_hash_table_unref);
 

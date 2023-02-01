@@ -1,6 +1,7 @@
 #include <string.h>
 
-#include "cron_source.h"
+#include "gcron_private.h"
+#include "gcron.h"
 
 static void
 test_all_asterisks (void)

@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#include "cron_source.h"
+#include "gcron.h"
 
 static gboolean
 callback (gpointer user_data)
@@ -20,7 +20,7 @@ int
 main (int argc, char *argv[])
 {
   GMainContext *context = g_main_context_new ();
-  GSource *source = g_cron_source_new (" 5 */3 * * 0-4");
+  GSource *source = g_cron_source_new (" 20~25 */3 * * 0-4");
   g_source_set_callback (source, callback, NULL, NULL);
 
   g_source_attach (source, context);
