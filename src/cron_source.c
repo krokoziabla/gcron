@@ -19,33 +19,6 @@ GSourceFuncs g_cron_source_funcs = {
   .finalize = (GFinaliseFunc) finalize,
 };
 
-static gboolean
-in_itself (time_t t, struct PulseTrain *train, time_t * pulse)
-{
-  g_return_val_if_fail (train != NULL, FALSE);
-  g_return_val_if_fail (train->period != 0u, FALSE);
-
-  if (t % train->period == 0u && train->width > 0u)
-    {
-      if (pulse != NULL)
-        *pulse = t / train->period;
-      return TRUE;
-    }
-
-  time_t e = t - train->width;
-  if (e % train->period == 0u && train->width < train->period)
-    {
-      if (pulse != NULL)
-        *pulse = e / train->period + 1u;
-      return FALSE;
-    }
-  time_t a = ceil (e / (double) train->period);
-  time_t b = floor (t / (double) train->period);
-  if (pulse != NULL)
-    *pulse = a;
-  return a <= b;
-}
-
 static gboolean in_any (time_t t, GSList * trains, time_t * pulse);
 
 static gboolean
@@ -54,15 +27,31 @@ in (time_t t, struct PulseTrain *train, time_t * pulse)
   g_return_val_if_fail (train != NULL, FALSE);
   g_return_val_if_fail (pulse != NULL, FALSE);
 
-  if (!in_itself (t / train->unit - train->shift, train, pulse))
+  time_t U = train->unit;
+  time_t W = train->width;
+  time_t P = train->period;
+  time_t S = P - train->shift % P;
+
+  time_t B = t / U + S;
+  time_t E = B + P - W % P;
+
+  time_t N = B / P;
+
+  if (W == 0u || (W < P && B % P != 0u && (E % P == 0u || E / P != B / P)))
     return FALSE;
-  *pulse = (*pulse * train->period + train->shift) * train->unit;
-  return in_any (t - *pulse, train->children, pulse);
+
+  if (!in_any (t + S * U - N * P * U, train->children, pulse))
+    return FALSE;
+
+  *pulse += (N * P + train->shift % P - P) * U;
+  return TRUE;
 }
 
 static gboolean
 in_any (time_t t, GSList * trains, time_t * pulse)
 {
+  g_return_val_if_fail (pulse != NULL, FALSE);
+
   time_t minimal = t + 1u;
 
   for (GSList * train = trains; train != NULL; train = train->next)
@@ -74,8 +63,10 @@ in_any (time_t t, GSList * trains, time_t * pulse)
         minimal = pulse;
     }
 
-  if (pulse != NULL && minimal != t + 1u)
+  if (minimal != t + 1u)
     *pulse = minimal;
+  else if (trains == NULL)
+    *pulse = 0u;
 
   return trains == NULL || minimal != t + 1u;
 }
@@ -88,14 +79,14 @@ prepare (struct GCronSource *source, gint * timeout)
 
   *timeout = 1000;
 
-  time_t now = source->override_timefunc == NULL
-    ? time (NULL) : source->override_timefunc (NULL,
-                                               source->override_timefuncdata);
+  time_t now = time (NULL);
+  if (source->override_timefunc != NULL)
+    now = source->override_timefunc (NULL, source->override_timefuncdata);
 
   time_t maximal = source->last;
   for (GSList * g = source->pulse_trains; g != NULL; g = g->next)
     {
-      time_t pulse = maximal;
+      time_t pulse;
       if (!in_any (now, (GSList *) g->data, &pulse))
         return FALSE;
       if (pulse > maximal)
@@ -136,7 +127,7 @@ finalize (struct GCronSource *source)
 {
   g_return_if_fail (source != NULL);
 
-  GHashTable *children_to_dispose = g_hash_table_new (NULL, NULL);
+  g_autoptr (GHashTable) children_to_dispose = g_hash_table_new (NULL, NULL);
 
   for (GSList * g = source->pulse_trains; g != NULL; g = g->next)
     {
@@ -155,8 +146,6 @@ finalize (struct GCronSource *source)
   g_hash_table_iter_init (&iter, children_to_dispose);
   while (g_hash_table_iter_next (&iter, &key, &value))
     g_slist_free_full (key, destructor);
-
-  g_clear_pointer (&children_to_dispose, g_hash_table_unref);
 
   g_slist_free (g_steal_pointer (&source->pulse_trains));
 }

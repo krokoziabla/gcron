@@ -12,7 +12,6 @@ lib = library(
     'src/gcron.c',
     include_directories: inc,
     dependencies: [
-        meson.get_compiler('c').find_library('m', required: true),
         dependency('glib-2.0', version: '>=2.44'),
     ],
     c_args: ['-Wall','-Wextra'],
@@ -41,6 +40,7 @@ test(
       'test/main.c',
       'test/prepare.c',
       'test/schedule.c',
+      'test/annual.c',
       include_directories: inc,
       link_with: lib,
       dependencies: [

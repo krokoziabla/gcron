@@ -59,6 +59,12 @@ annual_functor (GSList * trains, guint * shift, struct PulseTrain *model)
   return trains;
 }
 
+typedef GSList *(*ForEachFunc) (GSList *, guint *, struct PulseTrain *);
+
+static GSList *for_each (gchar * items, ForEachFunc func,
+                         struct PulseTrain *model, guint asterisk_min,
+                         guint asterisk_max);
+
 static GSList *
 make_pulse_trains (gchar * schedule)
 {
@@ -81,24 +87,28 @@ make_pulse_trains (gchar * schedule)
     g_slist_prepend (NULL, g_slist_prepend (NULL, grid));
   GSList *days_train_group = NULL;
 
-  gchar **words = g_regex_split_simple ("\\s+", schedule, 0, 0);
+  g_auto (GStrv) words = g_regex_split_simple ("\\s+", schedule, 0, 0);
   guint empty = 0u;
-  for (gchar ** word = words; *word != NULL; ++word)
-    if (strcmp (*word, ""))
+  for (GStrv word = words; *word != NULL; ++word)
+    if (!strcmp (*word, ""))
+      ++empty;
+    else if (strcmp (*word, "*"))
       {
-        if (!strcmp (*word, "*"))
-          continue;
-
         ptrdiff_t i = (word - words - empty) % 5;
         GSList *trains = for_each (*word,
                                    i == 3 ? annual_functor : flat_functor,
                                    base_schedules + i,
                                    asterisk_min[i],
                                    asterisk_max[i]);
+        if (trains == NULL)
+          continue;
+
         switch (i)
           {
           case 2:
-            days_train_group = make_from_monthly_pulses (trains);
+            days_train_group =
+              g_slist_concat (days_train_group,
+                              make_from_monthly_pulses (trains));
             break;
           case 3:
             pulse_train_groups =
@@ -111,44 +121,29 @@ make_pulse_trains (gchar * schedule)
             pulse_train_groups = g_slist_prepend (pulse_train_groups, trains);
           }
       }
-    else
-      ++empty;
-  g_strfreev (g_steal_pointer (&words));
 
-  return g_slist_prepend (pulse_train_groups, days_train_group);
+  if (days_train_group != NULL)
+    pulse_train_groups =
+      g_slist_prepend (pulse_train_groups, days_train_group);
+
+  return pulse_train_groups;
 }
 
-static void
-g_cron_source_init (struct GCronSource *source, gchar * schedule)
-{
-  source->pulse_trains = make_pulse_trains (schedule);
-  source->pulse_train_destructor = g_free;
-}
-
-GSource *
-g_cron_source_new (gchar * schedule)
-{
-  GSource *source =
-    g_source_new (&g_cron_source_funcs, sizeof (struct GCronSource));
-  g_cron_source_init ((struct GCronSource *) source, schedule);
-  return source;
-}
-
-GSList *
+static GSList *
 for_each (gchar * items, ForEachFunc func, struct PulseTrain *model,
           guint asterisk_min, guint asterisk_max)
 {
   g_return_val_if_fail (func != NULL, NULL);
 
   GSList *accu = NULL;
-  GRegex *re = g_regex_new
+  g_autoptr (GRegex) re = g_regex_new
     ("^(\\*|(\\d+)(?:-(\\d+))?|(\\d+)?~(\\d+)?)(?:/([1-9]\\d*))?$", 0, 0,
      NULL);
 
-  gchar **intervals = g_strsplit (items, ",", 0);
-  for (gchar ** interval = intervals; *interval != NULL; ++interval)
+  g_auto (GStrv) intervals = g_strsplit (items, ",", 0);
+  for (GStrv interval = intervals; *interval != NULL; ++interval)
     {
-      GMatchInfo *match_info = NULL;
+      g_autoptr (GMatchInfo) match_info = NULL;
       if (g_regex_match (re, *interval, 0, &match_info))
         {
           guint first = asterisk_min;
@@ -185,12 +180,25 @@ for_each (gchar * items, ForEachFunc func, struct PulseTrain *model,
           for (guint i = first; i <= last; i += step)
             accu = func (accu, &i, model);
         }
-      g_match_info_unref (g_steal_pointer (&match_info));
     }
 
-  g_strfreev (g_steal_pointer (&intervals));
-  g_regex_unref (re);
   return accu;
+}
+
+static void
+g_cron_source_init (struct GCronSource *source, gchar * schedule)
+{
+  source->pulse_trains = make_pulse_trains (schedule);
+  source->pulse_train_destructor = g_free;
+}
+
+GSource *
+g_cron_source_new (gchar * schedule)
+{
+  GSource *source =
+    g_source_new (&g_cron_source_funcs, sizeof (struct GCronSource));
+  g_cron_source_init ((struct GCronSource *) source, schedule);
+  return source;
 }
 
 guint
@@ -199,14 +207,13 @@ g_cron_add_full (gint priority, gchar * schedule, GSourceFunc function,
 {
   g_return_val_if_fail (function != NULL, 0);
 
-  GSource *source = g_cron_source_new (schedule);
+  g_autoptr (GSource) source = g_cron_source_new (schedule);
 
   if (priority != G_PRIORITY_DEFAULT)
     g_source_set_priority (source, priority);
 
   g_source_set_callback (source, function, data, notify);
   guint id = g_source_attach (source, NULL);
-  g_source_unref (source);
 
   return id;
 }

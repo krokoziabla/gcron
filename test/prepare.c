@@ -21,16 +21,14 @@ static time_t
 timefunc (time_t * tloc, gpointer timefuncdata)
 {
   if (tloc != NULL)
-    {
-      *tloc = (time_t) timefuncdata;
-    }
+    *tloc = (time_t) timefuncdata;
   return (time_t) timefuncdata;
 }
 
 static void
 test_single (struct SingleTestData *data)
 {
-  GSource *source =
+  g_autoptr (GSource) source =
     g_source_new (&g_cron_source_funcs, sizeof (struct GCronSource));
 
   struct GCronSource *cron_source = (struct GCronSource *) source;
@@ -45,8 +43,6 @@ test_single (struct SingleTestData *data)
 
   g_assert_false (data->expected_result ^ g_cron_source_funcs.prepare
                   (source, &timeout));
-
-  g_clear_pointer (&source, g_source_unref);
 }
 
 static void
@@ -57,9 +53,10 @@ test_last (const struct LastTestData *data)
     .width = 3u,
     .shift = 2u,
     .unit = 1u,
+    .children = NULL,
   };
 
-  GSource *source =
+  g_autoptr (GSource) source =
     g_source_new (&g_cron_source_funcs, sizeof (struct GCronSource));
 
   struct GCronSource *cron_source = (struct GCronSource *) source;
@@ -74,8 +71,6 @@ test_last (const struct LastTestData *data)
 
   g_assert_false (data->expected_result ^ g_cron_source_funcs.prepare
                   (source, &timeout));
-
-  g_clear_pointer (&source, g_source_unref);
 }
 
 void
@@ -83,637 +78,764 @@ test_suite_prepare (void)
 {
   static struct SingleTestData single_data[] = {
     {
-     .train = {.period = 1u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 1u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 2u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 0u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 1u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 2u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 5u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 3u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 0u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 5u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 1u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 6u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 2u,.unit = 1u,.children =
+               NULL},
      .now = 4u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 0u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 1u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 2u,
      .expected_result = FALSE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 3u,
      .expected_result = TRUE,
      },
     {
-     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u},
+     .train = {.period = 3u,.width = 4u,.shift = 3u,.unit = 1u,.children =
+               NULL},
      .now = 7u,
      .expected_result = TRUE,
      },

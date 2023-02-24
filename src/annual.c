@@ -50,11 +50,10 @@ make (GSList * non_leap_trains)
   train->width = 36525u;
   train->shift = 10957u;
 
+  GSList **children = &train->children;
   {
-    GSList **trains = &train->children;
-
     train = g_new0 (struct PulseTrain, 1);
-    *trains = g_slist_prepend (*trains, train);
+    *children = g_slist_prepend (*children, train);
 
     train->period = 1461u;
     train->width = 366u;
@@ -62,15 +61,13 @@ make (GSList * non_leap_trains)
     train->children = leap_trains;
 
     train = g_new0 (struct PulseTrain, 1);
-    *trains = g_slist_prepend (*trains, train);
+    *children = g_slist_prepend (*children, train);
 
     train->period = 1461u;
     train->width = 1095u;
     train->shift = 366u;
     train->children = non_leap_trains;
   }
-
-  GSList *children = train->children;
 
   train = g_new0 (struct PulseTrain, 1);
   trains = g_slist_prepend (trains, train);
@@ -96,7 +93,7 @@ make (GSList * non_leap_trains)
     train->period = 36524u;
     train->width = 35064u;
     train->shift = 1460u;
-    train->children = children;
+    train->children = *children;
   }
 
   g_slist_foreach (trains, (GFunc) set_unit_day, NULL);

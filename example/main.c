@@ -19,17 +19,14 @@ callback (gpointer user_data)
 int
 main (int argc, char *argv[])
 {
-  GMainContext *context = g_main_context_new ();
-  GSource *source = g_cron_source_new (" 20~25 */3 * * 0-4");
+  g_autoptr (GMainContext) context = g_main_context_new ();
+  g_autoptr (GSource) source = g_cron_source_new (" * * * * 0-4");
   g_source_set_callback (source, callback, NULL, NULL);
 
   g_source_attach (source, context);
-  GMainLoop *loop = g_main_loop_new (context, TRUE);
+  g_autoptr (GMainLoop) loop = g_main_loop_new (context, TRUE);
 
   g_main_loop_run (loop);
 
-  g_main_loop_unref (loop);
-  g_source_unref (source);
-  g_main_context_unref (context);
   return EXIT_SUCCESS;
 }
