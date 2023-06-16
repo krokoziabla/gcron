@@ -13,35 +13,63 @@ set_unit_day (struct PulseTrain *train, gpointer userdata)
   train->unit = 60u * 60u * 24u;
 }
 
-static void
-leapscale (struct PulseTrain *train, gpointer userdata)
+
+static time_t
+cut (time_t S, time_t P, time_t whence, time_t wither, time_t X)
 {
-  if (train->shift >= 59u)
-    ++train->shift;
-  else if (train->shift + train->width >= 59u)
+  time_t WH = (whence + S) % P;
+  time_t WI = (wither + S) % P;
+
+  time_t d = 0u;
+  if (WH < X)
     {
-      g_slist_foreach (train->children, (GFunc) leapscale, userdata);
-      ++train->width;
+      d += X - WH;
+      if (WI < X)
+        {
+          time_t dd = X - WI;
+          d = dd < d ? d - dd : dd - d;
+        }
     }
-  ++train->period;
+  else if (WI < X)
+    d += X - WI;
+
+  return (whence - wither) * (WH - WI) > 0 ? X - d : 0u + d;
+}
+
+static void
+cut_one_day (struct PulseTrain *train, gpointer userdata)
+{
+  time_t whence = (time_t) userdata;
+  time_t wither = whence + 1u;
+  time_t shift = wither - whence;
+
+  g_return_if_fail (shift < train->period);
+
+  time_t W = train->width;
+  time_t P = train->period;
+
+  train->period -= shift;
+  train->width = W < P
+    ? cut (P - train->shift % P, P, whence, wither, train->width) : W - shift;
+  train->shift = cut (0, P, whence, wither, train->shift % P);
 }
 
 static GSList *
-make_leap_twin (GSList * trains)
+clone_trains (GSList *trains)
 {
-  GSList *leap_trains = g_slist_copy (trains);
-  for (GSList * t = leap_trains; t != NULL; t = t->next)
+  GSList *clones = g_slist_copy (trains);
+  for (GSList * t = clones; t != NULL; t = t->next)
     t->data = g_memdup2 (t->data, sizeof (struct PulseTrain));
-  g_slist_foreach (leap_trains, (GFunc) leapscale, NULL);
-  return leap_trains;
+  return clones;
 }
 
 GSList *
-make (GSList * non_leap_trains)
+make (GSList *leap_trains)
 {
-  g_return_val_if_fail (non_leap_trains != NULL, NULL);
+  g_return_val_if_fail (leap_trains != NULL, NULL);
 
-  GSList *leap_trains = make_leap_twin (non_leap_trains), *trains = NULL;
+  GSList *non_leap_trains = clone_trains (leap_trains), *trains = NULL;
+  g_slist_foreach (non_leap_trains, (GFunc) cut_one_day, (gpointer) 59u);
 
   struct PulseTrain *train = g_new0 (struct PulseTrain, 1);
   trains = g_slist_prepend (trains, train);
@@ -102,36 +130,37 @@ make (GSList * non_leap_trains)
 }
 
 GSList *
-make_from_monthly_pulses (GSList * d28_trains)
+make_from_monthly_pulses (GSList *d31_trains)
 {
-  GSList *d30_trains = make_leap_twin (d28_trains);
-  g_slist_foreach (d30_trains, (GFunc) leapscale, NULL);
-  GSList *d31_trains = make_leap_twin (d30_trains);
+  GSList *d30_trains = clone_trains (d31_trains);
+  g_slist_foreach (d30_trains, (GFunc) cut_one_day, (gpointer) 30u);
+  GSList *d29_trains = clone_trains (d30_trains);
+  g_slist_foreach (d29_trains, (GFunc) cut_one_day, (gpointer) 29u);
 
-  GSList *non_leap_trains = NULL;
+  GSList *leap_trains = NULL;
 
   struct PulseTrain *train = g_new0 (struct PulseTrain, 1);
-  non_leap_trains = g_slist_prepend (non_leap_trains, train);
+  leap_trains = g_slist_prepend (leap_trains, train);
 
-  train->period = 365u;
+  train->period = 366u;
   train->width = 31u;
   train->shift = 0u;
   train->children = d31_trains;
 
   train = g_new0 (struct PulseTrain, 1);
-  non_leap_trains = g_slist_prepend (non_leap_trains, train);
+  leap_trains = g_slist_prepend (leap_trains, train);
 
-  train->period = 365u;
-  train->width = 28u;
+  train->period = 366u;
+  train->width = 29u;
   train->shift = 31u;
-  train->children = d28_trains;
+  train->children = d29_trains;
 
   train = g_new0 (struct PulseTrain, 1);
-  non_leap_trains = g_slist_prepend (non_leap_trains, train);
+  leap_trains = g_slist_prepend (leap_trains, train);
 
-  train->period = 365u;
+  train->period = 366u;
   train->width = 153u;
-  train->shift = 59u;
+  train->shift = 60u;
 
   GSList **children = &train->children;
 
@@ -154,12 +183,12 @@ make_from_monthly_pulses (GSList * d28_trains)
   }
 
   train = g_new0 (struct PulseTrain, 1);
-  non_leap_trains = g_slist_prepend (non_leap_trains, train);
+  leap_trains = g_slist_prepend (leap_trains, train);
 
-  train->period = 365u;
+  train->period = 366u;
   train->width = 153u;
-  train->shift = 212u;
+  train->shift = 213u;
   train->children = *children;
 
-  return make (non_leap_trains);
+  return make (leap_trains);
 }

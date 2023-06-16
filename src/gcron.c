@@ -19,7 +19,7 @@ try_extend (struct PulseTrain *train, guint shift, guint width)
 }
 
 static GSList *
-flat_functor (GSList * trains, guint * shift, struct PulseTrain *model)
+flat_functor (GSList *trains, guint *shift, struct PulseTrain *model)
 {
   if (trains == NULL || !try_extend ((struct PulseTrain *) trains->data,
                                      model->shift + *shift, model->width))
@@ -31,24 +31,24 @@ flat_functor (GSList * trains, guint * shift, struct PulseTrain *model)
 }
 
 static GSList *
-annual_functor (GSList * trains, guint * shift, struct PulseTrain *model)
+annual_functor (GSList *trains, guint *shift, struct PulseTrain *model)
 {
   (void) model;
 
   static struct PulseTrain months[] = {
     {},                         // dummy
-    {.period = 365u,.width = 31u,.shift = 0u,.children = NULL}, // January
-    {.period = 365u,.width = 28u,.shift = 31u,.children = NULL},        // Febuary
-    {.period = 365u,.width = 31u,.shift = 59u,.children = NULL},        // March
-    {.period = 365u,.width = 30u,.shift = 90u,.children = NULL},        // April
-    {.period = 365u,.width = 31u,.shift = 120u,.children = NULL},       // May
-    {.period = 365u,.width = 30u,.shift = 151u,.children = NULL},       // June
-    {.period = 365u,.width = 31u,.shift = 181u,.children = NULL},       // July
-    {.period = 365u,.width = 31u,.shift = 212u,.children = NULL},       // August
-    {.period = 365u,.width = 30u,.shift = 243u,.children = NULL},       // September
-    {.period = 365u,.width = 31u,.shift = 273u,.children = NULL},       // October
-    {.period = 365u,.width = 30u,.shift = 304u,.children = NULL},       // November
-    {.period = 365u,.width = 31u,.shift = 334u,.children = NULL},       // December
+    {.period = 366u,.width = 31u,.shift = 0u,.children = NULL}, // January
+    {.period = 366u,.width = 29u,.shift = 31u,.children = NULL},        // Febuary
+    {.period = 366u,.width = 31u,.shift = 60u,.children = NULL},        // March
+    {.period = 366u,.width = 30u,.shift = 91u,.children = NULL},        // April
+    {.period = 366u,.width = 31u,.shift = 121u,.children = NULL},       // May
+    {.period = 366u,.width = 30u,.shift = 152u,.children = NULL},       // June
+    {.period = 366u,.width = 31u,.shift = 182u,.children = NULL},       // July
+    {.period = 366u,.width = 31u,.shift = 213u,.children = NULL},       // August
+    {.period = 366u,.width = 30u,.shift = 244u,.children = NULL},       // September
+    {.period = 366u,.width = 31u,.shift = 274u,.children = NULL},       // October
+    {.period = 366u,.width = 30u,.shift = 305u,.children = NULL},       // November
+    {.period = 366u,.width = 31u,.shift = 335u,.children = NULL},       // December
   };
 
   guint s = *shift % (sizeof months / sizeof (struct PulseTrain));
@@ -66,14 +66,14 @@ static GSList *for_each (gchar * items, ForEachFunc func,
                          guint asterisk_max);
 
 static GSList *
-make_pulse_trains (gchar * schedule)
+make_pulse_trains (gchar *schedule)
 {
   g_return_val_if_fail (schedule != NULL, NULL);
 
   static struct PulseTrain base_schedules[] = {
     {.period = 60u,.width = 1u,.shift = 0u,.unit = 60u,.children = NULL},       // minute
     {.period = 24u,.width = 1u,.shift = 0u,.unit = 60u * 60u,.children = NULL}, // hour
-    {.period = 28u,.width = 1u,.shift = -1,.unit = 60u * 60u * 24u,.children = NULL},   // day of month
+    {.period = 31u,.width = 1u,.shift = -1,.unit = 60u * 60u * 24u,.children = NULL},   // day of month
     {.period = 1u,.width = 1u,.shift = 0u,.unit = 60u,.children = NULL},        // grid
     {.period = 7u,.width = 1u,.shift = 3u,.unit = 60u * 60u * 24u,.children = NULL},    // day of week
   };
@@ -130,7 +130,7 @@ make_pulse_trains (gchar * schedule)
 }
 
 static GSList *
-for_each (gchar * items, ForEachFunc func, struct PulseTrain *model,
+for_each (gchar *items, ForEachFunc func, struct PulseTrain *model,
           guint asterisk_min, guint asterisk_max)
 {
   g_return_val_if_fail (func != NULL, NULL);
@@ -186,14 +186,14 @@ for_each (gchar * items, ForEachFunc func, struct PulseTrain *model,
 }
 
 static void
-g_cron_source_init (struct GCronSource *source, gchar * schedule)
+g_cron_source_init (struct GCronSource *source, gchar *schedule)
 {
   source->pulse_trains = make_pulse_trains (schedule);
   source->pulse_train_destructor = g_free;
 }
 
 GSource *
-g_cron_source_new (gchar * schedule)
+g_cron_source_new (gchar *schedule)
 {
   GSource *source =
     g_source_new (&g_cron_source_funcs, sizeof (struct GCronSource));
@@ -202,7 +202,7 @@ g_cron_source_new (gchar * schedule)
 }
 
 guint
-g_cron_add_full (gint priority, gchar * schedule, GSourceFunc function,
+g_cron_add_full (gint priority, gchar *schedule, GSourceFunc function,
                  gpointer data, GDestroyNotify notify)
 {
   g_return_val_if_fail (function != NULL, 0);
@@ -219,7 +219,7 @@ g_cron_add_full (gint priority, gchar * schedule, GSourceFunc function,
 }
 
 guint
-g_cron_add (gchar * schedule, GSourceFunc function, gpointer data)
+g_cron_add (gchar *schedule, GSourceFunc function, gpointer data)
 {
   return g_cron_add_full (G_PRIORITY_DEFAULT, schedule, function, data, NULL);
 }
