@@ -2,7 +2,7 @@
 #include <math.h>
 #include <time.h>
 
-#include "gcron_private.h"
+#include <private.h>
 
 typedef gboolean (*GPrepareFunc) (GSource * source, gint * timeout_);
 typedef void (*GFinaliseFunc) (GSource * source);

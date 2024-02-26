@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "gcron.h"
-#include "gcron_private.h"
+#include <gcron.h>
+#include <private.h>
 
 struct PeriodTestData
 {

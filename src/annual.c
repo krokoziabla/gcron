@@ -1,6 +1,6 @@
 #include <glib.h>
 
-#include "gcron_private.h"
+#include <private.h>
 
 static void
 set_unit_day (struct PulseTrain *train, gpointer userdata)

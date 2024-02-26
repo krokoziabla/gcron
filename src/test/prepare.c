@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "gcron_private.h"
+#include <private.h>
 
 struct SingleTestData
 {

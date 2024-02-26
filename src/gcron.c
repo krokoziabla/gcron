@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "gcron.h"
-#include "gcron_private.h"
+#include <gcron.h>
+#include <private.h>
 
 
 static bool

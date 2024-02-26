@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "gcron_private.h"
-#include "gcron.h"
+#include <private.h>
+#include <gcron.h>
 
 static void
 test_grid_only (gchar * schedule)

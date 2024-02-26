@@ -1,57 +1,30 @@
 project(
-  'gcron', 'c',
+  'GCron', 'c',
   version: '0.0',
-  default_options: ['c_std=c11'])
+  default_options: ['c_std=c17'])
 
 inc = include_directories('include')
-
-lib = library(
-    meson.project_name(),
-    'src/annual.c',
-    'src/cron_source.c',
-    'src/gcron.c',
-    include_directories: inc,
-    dependencies: [
-        dependency('glib-2.0', version: '>=2.44'),
-    ],
-    c_args: ['-Wall','-Wextra'],
-    install: true)
+glib = dependency('glib-2.0', version: '>=2.44')
 
 install_headers('include/gcron.h')
+
+subdir('src')
+subdir('example')
 
 gnome = import('gnome')
 
 gir = gnome.generate_gir(
     lib,
-    namespace: 'GCron',
-    nsversion: '0')
+    header: 'gcron.h',
+    includes: ['GLib-2.0'],
+    sources: ['include/gcron.h'],
+    namespace: meson.project_name(),
+    nsversion: '0',
+    install: true)
 
 gnome.generate_vapi(
-    'gcron',
+    '@0@-@1@'.format(meson.project_name(), meson.project_version()),
     sources: gir[0],
     install: true)
 
 import('pkgconfig').generate(lib)
-
-test(
-    'tests',
-    executable(
-      'tests',
-      'test/main.c',
-      'test/prepare.c',
-      'test/schedule.c',
-      'test/annual.c',
-      include_directories: inc,
-      link_with: lib,
-      dependencies: [
-          dependency('glib-2.0', version: '>=2.44'),
-      ]))
-
-executable(
-  'example',
-  'example/main.c',
-  include_directories: inc,
-  link_with: lib,
-  dependencies: [
-      dependency('glib-2.0', version: '>=2.44'),
-  ])
